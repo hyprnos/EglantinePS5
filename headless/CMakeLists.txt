@@ -690,12 +690,15 @@ foreach(bits 32 64)
       # open-world game's workers filled 64 MiB on cores 1/2 and evacuated whole caches
       # while streaming. A32 keeps the qualified 512/64/64.
       # Only the active architecture allocates these caches. A64 cores 3-5 (Switch 2 titles run
-      # game threads there) get 64 MiB: at 16 MiB, Mario Kart World filled them 75 times in a race
-      # and its cores spent 30-45% of their time compiling the same code again. A cache holds only
-      # the memory its code fills (EDEN_JIT_MEMORY).
+      # game threads there) get 128 MiB: at 16 MiB, Mario Kart World filled them 75 times in a
+      # race (30-45% of those cores' time spent recompiling) and Pokopia evacuated core 4's whole
+      # cache 50 times in two minutes, each evacuation a frame stall. 64 MiB stopped MKW filling
+      # them; Pokopia still needed 128 MiB, where its peak use was 32/48/32 MiB on cores 3/4/5.
+      # A32 core3/host stay 16 MiB. Code memory is committed in 16 MiB steps as a cache fills
+      # (memory_pages.cpp), so the cap only costs what is used.
       if(PS5_NATIVE)
           if(bits EQUAL 64)
-              set(jit_cache_sizes "m_core_index == 0 ? 256_MiB : m_core_index < 3 ? 192_MiB : 64_MiB")
+              set(jit_cache_sizes "m_core_index == 0 ? 256_MiB : m_core_index < 3 ? 192_MiB : 128_MiB")
           else()
               set(jit_cache_sizes "m_core_index == 0 ? 512_MiB : m_core_index < 3 ? 64_MiB : 16_MiB")
           endif()
